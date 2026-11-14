@@ -19,5 +19,6 @@ EXTRAS="" ./build.sh                 # plain port, no extras
 EXTRAS="touchboost" ./build.sh       # only the touch boost
 ```
 
-They are copied into `24.04-2.x-overlay/` (generated, git-ignored), which the build tools layer on top of `overlay/`.
+`build.sh` adds them to `out/device_larry.tar.xz` straight into the rootfs (not into `/opt/halium-overlay`,
+which can only shadow files that already exist).
 `desktop-mode` and `libertine-gpu` are never baked in. Install them on a running phone as described in their READMEs.

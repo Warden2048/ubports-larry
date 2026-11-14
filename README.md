@@ -173,3 +173,9 @@ If the screen stays black, plug USB into a Linux PC:
 - [ ] AppArmor: apparmor.service fails - 5.4 lacks Ubuntu's AppArmor patches (0003 covers dbus peer labels only)
 - [ ] Audio calibration libs (libacdbloader) absent on this vendor; headset/mic not tested
 - [ ] Display cutout + grid unit tuning in halium.yaml; recovery; UBports Installer config
+
+## Licence
+
+GPL-2.0-or-later for the original work in this repository. Kernel patches are GPL-2.0-only, and files
+copied from Lomiri or built from sensorfw and biometryd keep their upstream licences.
+See [`LICENSES.md`](LICENSES.md).

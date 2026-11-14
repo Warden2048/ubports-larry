@@ -48,24 +48,6 @@ if ! command -v python2 >/dev/null; then
     export PATH="$(realpath "$BUILD_DIR/shim"):$PATH"
 fi
 
-# 2b) Optional extras (see extras/README.md). The ones listed in extras.conf - or in $EXTRAS,
-# e.g. EXTRAS="" ./build.sh for a plain image - are copied into <release>-overlay/, which the
-# build tools layer on top of overlay/. Extras without an image overlay are installed on the phone.
-EXTRAS="${EXTRAS-$(grep -v '^[[:space:]]*#' "$HERE/extras.conf" 2>/dev/null | tr '\n' ' ')}"
-EXTRA_DIR="$HERE/${deviceinfo_ubuntu_touch_release:-24.04-2.x}-overlay"
-rm -rf "$EXTRA_DIR"
-for e in $EXTRAS; do
-    if [ -d "$HERE/extras/$e/overlay/system" ]; then
-        mkdir -p "$EXTRA_DIR/system"
-        cp -a "$HERE/extras/$e/overlay/system/." "$EXTRA_DIR/system/"
-        echo "extra baked into the image: $e"
-    elif [ -d "$HERE/extras/$e" ]; then
-        echo "extra '$e' is installed on the phone after flashing, not baked in - see extras/$e/README.md"
-    else
-        echo "extras.conf: unknown extra '$e'" >&2; exit 1
-    fi
-done
-
 # 3) Real build.
 # Empty-but-set LOCALVERSION stops setlocalversion appending "+" for a modified tree.
 export LOCALVERSION=
@@ -76,3 +58,30 @@ export KCFLAGS="${KCFLAGS} -Wno-error=fortify-source -Wno-error=unused-but-set-v
 -Wno-error=single-bit-bitfield-constant-conversion -Wno-error=deprecated-non-prototype \
 -Wno-error=enum-conversion -Wno-error=array-parameter -Wno-error=unused-const-variable"
 ./build/build.sh "${args[@]}"
+
+# 4) Optional extras (see extras/README.md): the ones listed in extras.conf - or in $EXTRAS,
+# e.g. EXTRAS="" ./build.sh for a plain image - are added to the device tarball straight into the
+# rootfs (system/...), not into /opt/halium-overlay: the overlay store can only shadow files that
+# already exist, and extras add new ones (binaries, systemd units).
+source ./deviceinfo
+OUT_DIR=out
+set -- "${args[@]}"
+while [ $# -gt 0 ]; do case "$1" in (-o) OUT_DIR="$2"; shift;; esac; shift; done
+EXTRAS="${EXTRAS-$(grep -v '^[[:space:]]*#' "$HERE/extras.conf" 2>/dev/null | tr '\n' ' ')}"
+TARBALL="$OUT_DIR/device_${deviceinfo_codename}.tar.xz"
+if [ -n "${EXTRAS// /}" ] && [ -f "$TARBALL" ]; then
+    STAGE=$(mktemp -d)
+    tar -xJf "$TARBALL" -C "$STAGE"
+    for e in $EXTRAS; do
+        if [ -d "$HERE/extras/$e/overlay/system" ]; then
+            cp -a "$HERE/extras/$e/overlay/system/." "$STAGE/system/"
+            echo "extra baked into the image: $e"
+        elif [ -d "$HERE/extras/$e" ]; then
+            echo "extra '$e' is installed on the phone after flashing - see extras/$e/README.md"
+        else
+            echo "extras.conf: unknown extra '$e'" >&2; exit 1
+        fi
+    done
+    tar -cJf "$TARBALL" -C "$STAGE" --owner=root --group=root partitions/ system/
+    rm -rf "$STAGE"
+fi
