@@ -1,0 +1,4 @@
+#!/bin/sh
+# Ubuntu Touch stand-in for Android's app_process, so the stock scrcpy client can start its server.
+# scrcpy runs: CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server <ver> key=value...
+exec /usr/local/bin/larry-scrcpy-server "$@"

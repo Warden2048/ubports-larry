@@ -1,0 +1,37 @@
+#!/bin/sh
+# device-hacks for OnePlus Nord N30 5G / Nord CE 3 Lite 5G (larry) - Halium 16
+# Runs once (device-hacks.service) after the Android container is up.
+
+log() { echo "device-hacks: $*" > /dev/kmsg; }
+
+# --- Android 16 ashmem ------------------------------------------------------
+# Android 16's libcutils opens /dev/ashmem<boot_id> instead of /dev/ashmem.
+# Without it, FMQ/ashmem users abort - notably the audio HAL loaded inside
+# PulseAudio ("Unable to stat ashmem device" -> "FMQ: Check failed").
+BOOT_ID=$(cat /proc/sys/kernel/random/boot_id)
+if [ -c /dev/ashmem ] && [ ! -e "/dev/ashmem${BOOT_ID}" ]; then
+    ln -sf /dev/ashmem "/dev/ashmem${BOOT_ID}"
+fi
+lxc-attach -n android --clear-env -- /system/bin/ln -sf /dev/ashmem "/dev/ashmem${BOOT_ID}" 2>/dev/null
+
+# --- Wi-Fi (qcacld-3.0) -----------------------------------------------------
+# The vendor tries to modprobe its own prebuilt qca_cld3_wlan.ko from
+# /vendor/lib/modules, which does not match our kernel. Load ours instead,
+# once cnss-daemon is up, then switch the driver on (normally done by the
+# Android Wi-Fi HAL) so it creates wlan0 for NetworkManager.
+n=0
+while [ $n -lt 60 ] && [ "$(getprop init.svc.cnss-daemon 2>/dev/null)" != "running" ]; do
+    sleep 1; n=$((n + 1))
+done
+if ! grep -q "^wlan " /proc/modules; then
+    modprobe wlan && log "loaded wlan.ko" || log "modprobe wlan FAILED"
+fi
+n=0
+while [ $n -lt 30 ] && [ ! -e /dev/wlan ]; do sleep 1; n=$((n + 1)); done
+if [ -e /dev/wlan ]; then
+    echo ON > /dev/wlan && log "wlan switched ON" || log "writing ON to /dev/wlan FAILED"
+else
+    log "/dev/wlan did not appear"
+fi
+
+exit 0

@@ -1,0 +1,58 @@
+##########
+# OnePlus Nord N30 5G / Nord CE 3 Lite 5G (larry) - Ubuntu Touch (Halium 16 GSI)
+# Qualcomm SM6375 (holi/blair), kernel 5.4 QGKI, boot header v3 + vendor_boot
+##########
+
+deviceinfo_name="OnePlus Nord N30 5G"
+deviceinfo_manufacturer="OnePlus"
+deviceinfo_codename="larry"
+deviceinfo_arch="aarch64"
+
+deviceinfo_halium_version="16"
+deviceinfo_ubuntu_touch_release="24.04-2.x"
+
+##########
+# Kernel (LineageOS 23.2 kernel; halium.config is injected by ./build.sh)
+deviceinfo_kernel_source="https://github.com/LineageOS/android_kernel_oneplus_sm6375.git"
+deviceinfo_kernel_source_branch="lineage-23.2"
+deviceinfo_kernel_defconfig="vendor/holi-qgki_defconfig halium.config"
+deviceinfo_kernel_clang_compile="true"
+deviceinfo_kernel_llvm_compile="true"
+deviceinfo_kernel_use_lld="true"
+deviceinfo_kernel_image_name="Image"
+
+# Stock (OxygenOS 16) and LineageOS cmdline, plus Halium bits.
+# Header v3: everything goes in the vendor_boot cmdline.
+deviceinfo_kernel_cmdline=""
+deviceinfo_kernel_vendor_cmdline="androidboot.hardware=qcom androidboot.memcg=1 androidboot.usbcontroller=4e00000.dwc3 androidboot.boot_devices=soc/4804000.ufshc cgroup.memory=nokmem,nosocket loop.max_part=7 lpm_levels.sleep_disabled=1 msm_rtb.filter=0x237 reboot=panic_warm service_locator.enable=1 swiotlb=0 iptable_raw.raw_before_defrag=1 ip6table_raw.raw_before_defrag=1 printk.devkmsg=on console=tty0 buildvariant=user systempart=/dev/mapper/system"
+
+##########
+# Boot images (values from stock boot.img: header v3, pagesize 4096, base 0)
+deviceinfo_bootimg_header_version="3"
+deviceinfo_flash_pagesize="4096"
+deviceinfo_flash_offset_base="0x00000000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_second="0x00000000"
+deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_flash_offset_dtb="0x01f00000"
+deviceinfo_bootimg_qcdt="false"
+deviceinfo_bootimg_os_version="16"
+deviceinfo_bootimg_os_patch_level="2026-03"
+deviceinfo_bootimg_partition_size="167772160"
+deviceinfo_vendor_boot_partition_size="167772160"
+deviceinfo_ramdisk_compression="lz4"
+
+# Base DTB goes into vendor_boot, DTBO is built from the larry overlays.
+deviceinfo_dtb="vendor/larry/blair-larry.dtb"
+deviceinfo_dtbo="vendor/larry/blair-larry-22821-overlay.dtbo vendor/larry/blair-larry-22871-overlay.dtbo vendor/larry/blair-larry-22872-overlay.dtbo vendor/larry/blair-larry-22874-overlay.dtbo"
+
+# larry has no recovery partition (recovery lives in vendor_boot)
+deviceinfo_has_recovery_partition="false"
+deviceinfo_use_unified_recovery="false"
+
+##########
+# Rootfs
+deviceinfo_rootfs_image_sector_size="4096"
+deviceinfo_system_partition_size="4500M"
+deviceinfo_use_overlaystore="true"

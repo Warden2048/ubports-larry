@@ -1,0 +1,11 @@
+[Unit]
+Description=Touch input boost for 120 Hz scrolling (OnePlus Nord N30 port)
+After=systemd-udev-settle.service
+
+[Service]
+ExecStart=/usr/bin/larry-touchboost
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

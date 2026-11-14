@@ -1,0 +1,6 @@
+# Ubuntu Touch: intentionally empty.
+# The vendor init.qcom.usb.rc builds its own Android gadget (configs/b.1) on
+# /config/usb_gadget/g1 and binds it to the UDC. That makes usb-moded's
+# configurator fail ("mkdir configs/c.1: Device or resource busy"), so
+# usb-moded never starts and the phone never shows up on USB (MTP/RNDIS/SSH).
+# usb-moded owns the USB gadget on Ubuntu Touch.

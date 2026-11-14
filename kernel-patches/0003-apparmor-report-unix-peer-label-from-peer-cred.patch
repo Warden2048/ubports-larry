@@ -1,0 +1,42 @@
+diff --git a/security/apparmor/lsm.c b/security/apparmor/lsm.c
+index e88f68b60..bca067839 100644
+--- a/security/apparmor/lsm.c
++++ b/security/apparmor/lsm.c
+@@ -1072,9 +1072,29 @@ static int apparmor_socket_getpeersec_stream(struct socket *sock,
+ 	int slen, error = 0;
+ 	struct aa_label *label;
+ 	struct aa_label *peer;
++	struct aa_label *cred_peer = NULL;
+ 
+ 	label = begin_current_label_crit_section();
+ 	peer = sk_peer_label(sock->sk);
++	/*
++	 * Halium: this kernel lacks Ubuntu's af_unix mediation, so the
++	 * socket peer label is never recorded. Fall back to the label of
++	 * the peer's credentials (captured at connect time) so dbus-daemon
++	 * can report AppArmor contexts (needed by media-hub, trust-store...).
++	 */
++	if (IS_ERR(peer) && sock->sk->sk_family == AF_UNIX) {
++		const struct cred *pc;
++
++		spin_lock(&sock->sk->sk_peer_lock);
++		pc = get_cred(sock->sk->sk_peer_cred);
++		spin_unlock(&sock->sk->sk_peer_lock);
++		if (pc) {
++			cred_peer = aa_get_newest_label(cred_label(pc));
++			put_cred(pc);
++			if (cred_peer)
++				peer = cred_peer;
++		}
++	}
+ 	if (IS_ERR(peer)) {
+ 		error = PTR_ERR(peer);
+ 		goto done;
+@@ -1100,6 +1120,7 @@ static int apparmor_socket_getpeersec_stream(struct socket *sock,
+ 	}
+ 
+ done:
++	aa_put_label(cred_peer);
+ 	end_current_label_crit_section(label);
+ 
+ 	return error;

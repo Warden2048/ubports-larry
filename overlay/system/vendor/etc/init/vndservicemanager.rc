@@ -1,0 +1,24 @@
+# Android's vndservicemanager aborts unless SELinux is running
+# ("Check failed: selinux_status_open(true) >= 0"). Ubuntu Touch runs AppArmor,
+# and on this 5.4 kernel only one of the two can be active. Halium ships
+# libselinux_stubs.so (a no-op libselinux) for exactly this. Without it the crash
+# triggers class_restart hal every ~5 s, killing the display composer and USB.
+# Same fix as the Pixel 5/9 Halium ports.
+service vndservicemanager /vendor/bin/vndservicemanager /dev/vndbinder
+    class core
+    user system
+    group system readproc
+    file /dev/kmsg w
+    setenv LD_PRELOAD libselinux_stubs.so
+    task_profiles ServiceCapacityLow
+    onrestart class_restart main
+    onrestart class_restart hal
+    onrestart class_restart early_hal
+    shutdown critical
+
+# The vendor ships its camcorder/encoder profiles as media_profiles_vendor.xml,
+# which MediaProfiles only finds via this property. Without it the camera's
+# legacy API caps video at 352x288 (built-in defaults). Rides in this file
+# because overlays can only replace existing files.
+on early-boot
+    setprop media.settings.xml /vendor/etc/media_profiles_vendor.xml

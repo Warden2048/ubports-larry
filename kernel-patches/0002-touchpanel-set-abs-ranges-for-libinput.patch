@@ -1,0 +1,19 @@
+diff --git a/drivers/input/touchscreen/oplus_touchscreen_v2/touchpanel_common_driver.c b/drivers/input/touchscreen/oplus_touchscreen_v2/touchpanel_common_driver.c
+index f5a293a40..7cb016ee6 100644
+--- a/drivers/input/touchscreen/oplus_touchscreen_v2/touchpanel_common_driver.c
++++ b/drivers/input/touchscreen/oplus_touchscreen_v2/touchpanel_common_driver.c
+@@ -1413,7 +1413,13 @@ static int init_input_device(struct touchpanel_data *ts)
+ 
+ 	input_mt_init_slots(ts->input_dev, ts->max_num, 0);
+ 	input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
+-	//input_set_abs_params(ts->input_dev, ABS_MT_PRESSURE, 0, 255, 0, 0);
++	/*
++	 * Ubuntu Touch: ABS_MT_WIDTH_MAJOR and ABS_MT_PRESSURE are enabled
++	 * above but were left with min == max == 0, which libinput rejects
++	 * ("kernel bug: device has min == max"), dropping the touchscreen.
++	 */
++	input_set_abs_params(ts->input_dev, ABS_MT_WIDTH_MAJOR, 0, 255, 0, 0);
++	input_set_abs_params(ts->input_dev, ABS_MT_PRESSURE, 0, 255, 0, 0);
+ 	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X, 0,
+ 			     ts->resolution_info.max_x - 1, 0, 0);
+ 	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y, 0,

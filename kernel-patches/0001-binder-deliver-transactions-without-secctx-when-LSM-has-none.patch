@@ -1,0 +1,65 @@
+diff --git a/drivers/android/binder.c b/drivers/android/binder.c
+index cfe7a2aa0..9c113b3de 100644
+--- a/drivers/android/binder.c
++++ b/drivers/android/binder.c
+@@ -3001,6 +3001,9 @@ static struct binder_node *binder_get_node_refs_for_txn(
+ 	return target_node;
+ }
+ 
++/* Halium: context handed to context managers when the LSM provides none */
++static const char binder_halium_dummy_secctx[] = "u:r:halium_unlabeled:s0";
++
+ static void binder_transaction(struct binder_proc *proc,
+ 			       struct binder_thread *thread,
+ 			       struct binder_transaction_data *tr, int reply,
+@@ -3029,6 +3032,7 @@ static void binder_transaction(struct binder_proc *proc,
+ 	int t_debug_id = atomic_inc_return(&binder_last_id);
+ 	char *secctx = NULL;
+ 	u32 secctx_sz = 0;
++	bool secctx_is_dummy = false;
+ 	bool is_nested = false;
+ 	struct list_head sgc_head;
+ 	struct list_head pf_head;
+@@ -3314,10 +3318,17 @@ static void binder_transaction(struct binder_proc *proc,
+ 			}
+ 		}
+ 		if (ret) {
+-			return_error = BR_FAILED_REPLY;
+-			return_error_param = ret;
+-			return_error_line = __LINE__;
+-			goto err_get_secctx_failed;
++			/*
++			 * Halium: with AppArmor as the active LSM the sender has
++			 * no secctx (secid 0 -> -EINVAL). Android 10+ context
++			 * managers (vndservicemanager) request one on every
++			 * transaction and abort if a remote caller has none, so
++			 * hand them a fixed dummy context instead of failing the
++			 * transaction. libselinux_stubs treats it as allowed.
++			 */
++			secctx = (char *)binder_halium_dummy_secctx;
++			secctx_sz = sizeof(binder_halium_dummy_secctx);
++			secctx_is_dummy = true;
+ 		}
+ 		added_size = ALIGN(secctx_sz, sizeof(u64));
+ 		extra_buffers_size += added_size;
+@@ -3361,7 +3372,8 @@ static void binder_transaction(struct binder_proc *proc,
+ 			t->security_ctx = 0;
+ 			WARN_ON(1);
+ 		}
+-		security_release_secctx(secctx, secctx_sz);
++		if (!secctx_is_dummy)
++			security_release_secctx(secctx, secctx_sz);
+ 		secctx = NULL;
+ 	}
+ 	t->buffer->debug_id = t->debug_id;
+@@ -3770,9 +3782,8 @@ static void binder_transaction(struct binder_proc *proc,
+ 	binder_alloc_free_buf(&target_proc->alloc, t->buffer);
+ err_binder_alloc_buf_failed:
+ err_bad_extra_size:
+-	if (secctx)
++	if (secctx && !secctx_is_dummy)
+ 		security_release_secctx(secctx, secctx_sz);
+-err_get_secctx_failed:
+ 	kfree(tcomplete);
+ 	binder_stats_deleted(BINDER_STAT_TRANSACTION_COMPLETE);
+ err_alloc_tcomplete_failed:

@@ -1,0 +1,20 @@
+larry:
+  Names:
+    - larry
+    - OnePlus Nord N30 5G
+    - OnePlus Nord CE 3 Lite 5G
+  PrettyName: OnePlus Nord N30 5G
+  DeviceType: phone
+  GridUnit: 20
+  SupportedOrientations:
+    - Portrait
+    - Landscape
+    - InvertedLandscape
+  MirAndroidPlatformServerBackpressure:
+    - false
+  MirAndroidPlatformServerPartialUpdates:
+    - true
+  MirAndroidPlatformClientEglFlush:
+    - "!/usr/bin/lomiri,all"
+  FilesystemEncryption: false
+  OfonoPlugin: binder

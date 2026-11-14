@@ -1,0 +1,7 @@
+# Disabled for Ubuntu Touch: usb-moded owns the USB gadget (MTP/RNDIS).
+# The vendor USB gadget HAL reconfigures /config/usb_gadget/g1 and fights it.
+service vendor.usbgadget-hal /vendor/bin/hw/android.hardware.usb.gadget-service.qti_HALIUM_DISABLED
+    class hal
+    user system
+    group system shell mtp
+    disabled
