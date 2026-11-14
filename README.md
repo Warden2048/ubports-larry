@@ -1,6 +1,6 @@
 # Ubuntu Touch (Halium 16) for OnePlus Nord N30 5G / Nord CE 3 Lite 5G — `larry`
 
-Community port, **work in progress / first-boot stage**. Expect things to be broken.
+Community port, **work in progress**.
 
 | | |
 |---|---|
